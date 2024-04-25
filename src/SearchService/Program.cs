@@ -19,16 +19,30 @@ builder.Services.AddMassTransit(x =>
 
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("search", false));
 
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        cfg.ReceiveEndpoint("search-auction-created", e =>
+    x.UsingRabbitMq(
+        (context, cfg) =>
         {
-            e.UseMessageRetry(r => r.Interval(5, 5));
-            e.ConfigureConsumer<AuctionCreatedConsumer>(context);
-        });
-        
-        cfg.ConfigureEndpoints(context);
-    });
+            cfg.Host(
+                builder.Configuration["RabbitMq:Host"],
+                "/",
+                host =>
+                {
+                    host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
+                    host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
+                }
+            );
+            cfg.ReceiveEndpoint(
+                "search-auction-created",
+                e =>
+                {
+                    e.UseMessageRetry(r => r.Interval(5, 5));
+                    e.ConfigureConsumer<AuctionCreatedConsumer>(context);
+                }
+            );
+
+            cfg.ConfigureEndpoints(context);
+        }
+    );
 });
 
 var app = builder.Build();
@@ -39,7 +53,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// use this Register method to avoid application failing 
+// use this Register method to avoid application failing
 // while waiting for searchservice to be up
 // The app will kepp working even if search service is down
 app.Lifetime.ApplicationStarted.Register(async () =>
@@ -56,8 +70,8 @@ app.Lifetime.ApplicationStarted.Register(async () =>
 
 app.Run();
 
-static IAsyncPolicy<HttpResponseMessage> GetPolicy()
-    => HttpPolicyExtensions
+static IAsyncPolicy<HttpResponseMessage> GetPolicy() =>
+    HttpPolicyExtensions
         .HandleTransientHttpError()
         .OrResult(msg => msg.StatusCode == HttpStatusCode.NotFound)
         .WaitAndRetryForeverAsync(_ => TimeSpan.FromSeconds(3));
