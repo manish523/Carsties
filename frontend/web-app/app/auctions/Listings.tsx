@@ -21,7 +21,7 @@ export default function Listings() {
     (state) => ({
       pageNumber: state.pageNumber,
       pageSize: state.pageSize,
-      searchTerma: state.searchTerm,
+      searchTerm: state.searchTerm,
     }),
     shallow
   );
