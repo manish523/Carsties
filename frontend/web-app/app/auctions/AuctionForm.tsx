@@ -55,6 +55,7 @@ export default function AuctionForm({ auction }: Props) {
       toast.error(error.status + " " + error.message);
     }
   }
+
   return (
     <form className="flex flex-col mt-3" onSubmit={handleSubmit(onSubmit)}>
       <Input
@@ -126,7 +127,7 @@ export default function AuctionForm({ auction }: Props) {
         </Button>
         <Button
           isProcessing={isSubmitting}
-          disabled={!isValid}
+          // disabled={!isValid}
           type="submit"
           outline
           color="success"
